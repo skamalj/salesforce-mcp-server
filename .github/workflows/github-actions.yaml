@@ -15,6 +15,18 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+  
+    - name: Request OIDC token
+      id: oidc
+      run: |
+        echo "Requesting ID token..."
+        curl -sLS -o token.json "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=google-cloud" \
+          -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+        cat token.json | jq -r '.value' | awk -F. '{print $2}' | base64 -d | jq .
+      env:
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ACTIONS_ID_TOKEN_REQUEST_URL: ${{ steps.auth.outputs.id_token_url || '' }}
+
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
