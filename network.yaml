@@ -1,0 +1,212 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: VPC + Public and Private Subnets + SG + Cloud Map Namespace (No NATGW)
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: mcp-vpc
+
+  # Public Subnet A
+  SubnetPublicA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: mcp-public-subnet-a
+
+  # Public Subnet B
+  SubnetPublicB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: mcp-public-subnet-b
+
+  # Private Subnet A
+  SubnetPrivateA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: mcp-private-subnet-a
+
+  # Private Subnet B
+  SubnetPrivateB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: mcp-private-subnet-b
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: mcp-igw
+
+  # Attach Internet Gateway
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public Route Table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: mcp-public-route-table
+
+  # Public Route to Internet
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Associate Public Subnets
+  PublicSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublicA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublicB
+      RouteTableId: !Ref PublicRouteTable
+
+  # Private Route Table (No NATGW yet)
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: mcp-private-route-table
+
+  # Associate Private Subnets
+  PrivateSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPrivateA
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPrivateB
+      RouteTableId: !Ref PrivateRouteTable
+
+  # ECS Service Security Group
+  ECSServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow traffic for ECS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+
+  # Cloud Map Namespace
+  CloudMapNamespace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: mcp.local
+      Vpc: !Ref VPC
+      Description: Service discovery namespace for ECS services
+  
+  # Cloud Map Namespace
+  CloudMapPublicNamespace:
+    Type: AWS::ServiceDiscovery::PublicDnsNamespace
+    Properties:
+      Name: mcp.fauxdata.in
+      Properties:
+        DnsProperties:
+          SOA:
+            TTL: 100
+      Description: Service discovery public namespace for ECS services
+
+Outputs:
+  VpcId:
+    Value: !Ref VPC
+    Export:
+      Name: MCPVpcId
+
+  SubnetPublicA:
+    Value: !Ref SubnetPublicA
+    Export:
+      Name: MCPSubnetPublicA
+
+  SubnetPublicB:
+    Value: !Ref SubnetPublicB
+    Export:
+      Name: MCPSubnetPublicB
+
+  SubnetPrivateA:
+    Value: !Ref SubnetPrivateA
+    Export:
+      Name: MCPSubnetPrivateA
+
+  SubnetPrivateB:
+    Value: !Ref SubnetPrivateB
+    Export:
+      Name: MCPSubnetPrivateB
+
+  SecurityGroupId:
+    Value: !Ref ECSServiceSecurityGroup
+    Export:
+      Name: MCPSecurityGroupId
+
+  CloudMapNamespaceId:
+    Value: !Ref CloudMapNamespace
+    Export:
+      Name: MCPCloudMapNamespaceId
+
+  CloudMapNamespaceName:
+    Value: mcp.local
+    Export:
+      Name: MCPCloudMapNamespaceName
+  
+  CloudMapPublicNamespaceName:
+    Value: mcp.fauxdata.in
+    Export:
+      Name: MCPCloudMapPublicNamespaceName
+  
+  CloudMapPublicNamespaceId:
+    Value: !Ref CloudMapPublicNamespace
+    Export:
+      Name: MCPCloudMapPublicNamespaceId

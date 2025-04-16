@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "mcp-salesforce-ecs"
+resolve_s3 = true
+s3_prefix = "mcp-salesforce-ecs"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
+parameter_overrides = "SalesforceSecretName=\"agentic_app_secrets-aV0lsP\" SalesforceDDBTableName=\"salesforce_tokens\" CloudMapNamespaceName=\"mcp.local\""
+image_repositories = []

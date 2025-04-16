@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ECS Service with Secrets Manager, Cloud Map, and DynamoDB Integration
+
+Parameters:
+  AgenticAppSecretName:
+    Type: String
+    Default: agentic_app_secrets-aV0lsP
+    Description: Name of the Salesforce secret (not the full ARN)
+
+  SalesforceDDBTableName:
+    Type: String
+    Default: "salesforce_tokens"
+    Description: DynamoDB table name for Salesforce data
+  
+  CloudMapNamespaceName:
+    Type: String
+    Description: The Name of the CloudMap namespace
+    Default: "mcp.local"
+
+Resources:
+  # ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: mcp-ecs-cluster
+  
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/mcp-salesforce-server
+      RetentionInDays: 7
+
+
+  CloudMapService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: mcp-salesforce-service
+      NamespaceId: !ImportValue MCPCloudMapPublicNamespaceId
+      DnsConfig:
+        DnsRecords:
+          - TTL: 60
+            Type: A
+
+  # ECS Task Role (Permissions to access Secrets Manager and DynamoDB)
+  ECSServiceTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ecsMCPTaskExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SecretsAndDynamoAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AgenticAppSecretName}"
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SalesforceDDBTableName}
+
+  # ECS Task Definition
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: my-ecs-task
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt ECSServiceTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSServiceTaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: my-container
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/mcp-salesforce-server:latest"
+          PortMappings:
+            - ContainerPort: 8000
+          Secrets:
+            - Name: SALESFORCE_DOMAIN
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AgenticAppSecretName}:SALESFORCE_DOMAIN::"
+            - Name: SALESFORCE_CLIENT_ID
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AgenticAppSecretName}:SALESFORCE_CLIENT_ID::"
+            - Name: SALESFORCE_REDIRECT_URI
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AgenticAppSecretName}:SALESFORCE_REDIRECT_URI::"
+            - Name: WHATSAPP_API_TOKEN
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AgenticAppSecretName}:WHATSAPP_API_TOKEN::"
+            - Name: WHATSAPP_NUMBER_ID
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${AgenticAppSecretName}:WHATSAPP_NUMBER_ID::"
+          Environment:
+            - Name: SF_DDB_TABLE
+              Value: !Ref SalesforceDDBTableName
+            - Name: SF_API_VERSION
+              Value: v60.0
+            - Name: FASTMCP_PORT
+              Value: 8000
+            - Name: FASTMCP_DEBUG
+              Value: true
+            - Name: FASTMCP_HOST
+              Value: 0.0.0.0
+            - Name: LOG_LEVEL
+              Value: debug
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+
+  # ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      ServiceRegistries:
+        - RegistryArn: !GetAtt CloudMapService.Arn
+      TaskDefinition: !Ref ECSTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !ImportValue MCPSubnetPublicA
+            - !ImportValue MCPSubnetPublicB
+          SecurityGroups:
+            - !ImportValue MCPSecurityGroupId
+
+  # VPC Link for API Gateway to ECS
+  VpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: mcp-vpclink
+      SubnetIds:
+        - !ImportValue MCPSubnetPublicA
+        - !ImportValue MCPSubnetPublicB
+      SecurityGroupIds:
+        - !ImportValue MCPSecurityGroupId
+
+
+Outputs:
+
+  ECSClusterName:
+    Value: !Ref ECSCluster
+    Export:
+      Name: ECSClusterName
+
+  ECSServiceName:
+    Value: !Ref ECSService
+    Export:
+      Name: ECSServiceName
