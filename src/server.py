@@ -1,7 +1,7 @@
 import os
 import urllib.parse
 import requests
-from utils import get_secret
+from src.utils import get_secret
 import boto3
 import json
 from typing import Optional, Literal

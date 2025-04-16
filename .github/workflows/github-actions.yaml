@@ -1,0 +1,37 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        token_format: 'id_token'
+        workload_identity_provider: 'projects/780061552535/locations/global/workloadIdentityPools/github-actions/providers/github'
+        service_account: 'github-actions-sa@gcdeveloper-new.iam.gserviceaccount.com'
+
+    - name: Set up gcloud
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: Configure Docker
+      run: |
+        gcloud auth configure-docker asia-south1-docker.pkg.dev
+
+    - name: Build and Push Docker Image
+      run: |
+        IMAGE="asia-south1-docker.pkg.dev/gcdeveloper-new/salesforce-mcp/server"
+        docker build -t "$IMAGE:$GITHUB_SHA" .
+        docker push "$IMAGE:$GITHUB_SHA"
+
