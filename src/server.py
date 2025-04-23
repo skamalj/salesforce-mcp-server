@@ -10,6 +10,8 @@ from mcp.server.fastmcp import FastMCP
 domain = os.environ.get("SALESFORCE_DOMAIN")
 client_id = os.environ.get("SALESFORCE_CLIENT_ID")
 redirect_uri = os.environ.get("SALESFORCE_REDIRECT_URI")
+table_name = os.getenv("SF_DDB_TABLE")
+api_version = os.getenv("SF_API_VERSION", "v60.0")
 
 mcp = FastMCP("Echo")
 
@@ -88,8 +90,6 @@ def execute_salesforce_soql(soql_query: str, profile_id: str) -> list[dict]:
     Raises:
         Exception: If credentials are missing or query fails.
     """
-    table_name = os.getenv("SF_DDB_TABLE")
-    api_version = os.getenv("SF_API_VERSION", "v60.0")
 
     if not table_name:
         raise EnvironmentError("Missing SF_DDB_TABLE in environment variables.")
@@ -148,8 +148,6 @@ def execute_salesforce_rest(
     Raises:
         Exception: On credential or API failure.
     """
-    table_name = os.getenv("SF_DDB_TABLE")
-    api_version = os.getenv("SF_API_VERSION", "v60.0")
 
     if not table_name:
         raise EnvironmentError("Missing SF_DDB_TABLE env variable.")
