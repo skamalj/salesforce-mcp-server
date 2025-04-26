@@ -2,10 +2,10 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 
 async def main():
-    endpoint = "https://3qfipta7p8.execute-api.ap-south-1.amazonaws.com/prod/sse"  # replace this with your actual endpoint
+    endpoint = "http://localhost:8000/sse"  # replace this with your actual endpoint
 
     async with sse_client(endpoint) as streams:
-        async with ClientSession(streams) as session:  # removed the *
+        async with ClientSession(*streams) as session:  # removed the *
             await session.initialize()
             tools_result = await session.list_tools()
             print(tools_result)

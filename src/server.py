@@ -271,4 +271,6 @@ def send_email_via_ses(email_json: str):
 
 
 if __name__ == "__main__":
-    mcp.run()
+    print("Starting server...")
+    mcp.run(transport="sse")
+    print("Server is running...")
