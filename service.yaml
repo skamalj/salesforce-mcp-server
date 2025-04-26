@@ -24,6 +24,13 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: mcp-ecs-cluster
+  
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/mcp-salesforce-server
+      RetentionInDays: 7
+
 
   CloudMapService:
     Type: AWS::ServiceDiscovery::Service
@@ -106,6 +113,12 @@ Resources:
               Value: !Ref SalesforceDDBTableName
             - Name: SF_API_VERSION
               Value: v60.0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
 
   # ECS Service
   ECSService:
@@ -121,8 +134,8 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
           Subnets:
-            - !ImportValue MCPSubnetPrivateA
-            - !ImportValue MCPSubnetPrivateB
+            - !ImportValue MCPSubnetPublicA
+            - !ImportValue MCPSubnetPublicB
           SecurityGroups:
             - !ImportValue MCPSecurityGroupId
 
@@ -132,8 +145,8 @@ Resources:
     Properties:
       Name: mcp-vpclink
       SubnetIds:
-        - !ImportValue MCPSubnetPrivateA
-        - !ImportValue MCPSubnetPrivateB
+        - !ImportValue MCPSubnetPublicA
+        - !ImportValue MCPSubnetPublicB
       SecurityGroupIds:
         - !ImportValue MCPSecurityGroupId
 

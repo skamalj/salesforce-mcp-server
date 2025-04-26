@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: VPC + Subnets + SG + Cloud Map Namespace
+Description: VPC + Subnets + SG + Cloud Map Namespace with Public Subnets
 
 Resources:
   VPC:
@@ -13,28 +13,77 @@ Resources:
         - Key: Name
           Value: mcp-vpc
 
-  SubnetPrivateA:
+  # Public Subnet A
+  SubnetPublicA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: 10.0.1.0/24
-      MapPublicIpOnLaunch: false
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: mcp-private-subnet-a
+          Value: mcp-public-subnet-a
 
-  SubnetPrivateB:
+  # Public Subnet B
+  SubnetPublicB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: 10.0.2.0/24
-      MapPublicIpOnLaunch: false
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: mcp-private-subnet-b
+          Value: mcp-public-subnet-b
 
+  # Internet Gateway for Public Subnets
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: mcp-igw
+
+  # Attach the Internet Gateway to the VPC
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public Route Table for Public Subnets
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: mcp-public-route-table
+
+  # Public Route for Internet Access
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Associate Public Subnets with the Public Route Table
+  PublicSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublicA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublicB
+      RouteTableId: !Ref PublicRouteTable
+
+  # ECS Service Security Group
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -46,6 +95,7 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
 
+  # Cloud Map Namespace for Service Discovery
   CloudMapNamespace:
     Type: AWS::ServiceDiscovery::PrivateDnsNamespace
     Properties:
@@ -59,15 +109,15 @@ Outputs:
     Export:
       Name: MCPVpcId
 
-  SubnetPrivateA:
-    Value: !Ref SubnetPrivateA
+  SubnetPublicA:
+    Value: !Ref SubnetPublicA
     Export:
-      Name: MCPSubnetPrivateA
+      Name: MCPSubnetPublicA
 
-  SubnetPrivateB:
-    Value: !Ref SubnetPrivateB
+  SubnetPublicB:
+    Value: !Ref SubnetPublicB
     Export:
-      Name: MCPSubnetPrivateB
+      Name: MCPSubnetPublicB
 
   SecurityGroupId:
     Value: !Ref ECSServiceSecurityGroup
@@ -78,8 +128,8 @@ Outputs:
     Value: !Ref CloudMapNamespace
     Export:
       Name: MCPCloudMapNamespaceId
-  
+
   CloudMapNamespaceName:
-    Value: mcp.local  # Export the name explicitly
+    Value: mcp.local
     Export:
       Name: MCPCloudMapNamespaceName
