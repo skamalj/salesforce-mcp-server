@@ -186,6 +186,15 @@ Resources:
       ApiId: !Ref HttpApi
       RouteKey: "ANY /{proxy+}"
       Target: !Sub "integrations/${HttpApiIntegration}"
+  
+    # API Stage
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: prod
+      AutoDeploy: true
+
 
 
 Outputs:
