@@ -121,14 +121,6 @@ Resources:
               awslogs-group: !Ref LogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
-          HealthCheck: 
-            Command:
-              - CMD-SHELL
-              - curl -f http://localhost:8000/sse || exit 1
-            Interval: 30
-            Timeout: 5
-            Retries: 3
-            StartPeriod: 10
 
   # ECS Service
   ECSService:

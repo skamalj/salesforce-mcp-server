@@ -1,10 +1,15 @@
-from typing import Any, Dict, List, Optional
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 
+async def main():
+    endpoint = "http://65.1.91.173:8000"  # replace this with your actual endpoint
 
-async with sse_client(self.endpoint) as streams:
-            async with ClientSession(*streams) as session:
-                await session.initialize()
-                tools_result = await session.list_tools()
-                print(tools_result)
+    async with sse_client(endpoint) as streams:
+        async with ClientSession(streams) as session:  # removed the *
+            await session.initialize()
+            tools_result = await session.list_tools()
+            print(tools_result)
+
+# Then somewhere else:
+import asyncio
+asyncio.run(main())
