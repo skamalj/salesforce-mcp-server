@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: VPC + Subnets + SG + Cloud Map Namespace
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: mcp-vpc
+
+  SubnetPrivateA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: mcp-private-subnet-a
+
+  SubnetPrivateB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: mcp-private-subnet-b
+
+  ECSServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow traffic for ECS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  CloudMapNamespace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: mcp.local
+      Vpc: !Ref VPC
+      Description: Service discovery namespace for ECS services
+
+Outputs:
+  VpcId:
+    Value: !Ref VPC
+    Export:
+      Name: MCPVpcId
+
+  SubnetPrivateA:
+    Value: !Ref SubnetPrivateA
+    Export:
+      Name: MCPSubnetPrivateA
+
+  SubnetPrivateB:
+    Value: !Ref SubnetPrivateB
+    Export:
+      Name: MCPSubnetPrivateB
+
+  SecurityGroupId:
+    Value: !Ref ECSServiceSecurityGroup
+    Export:
+      Name: MCPSecurityGroupId
+
+  CloudMapNamespaceId:
+    Value: !Ref CloudMapNamespace
+    Export:
+      Name: MCPCloudMapNamespaceId
+  
+  CloudMapNamespaceName:
+    Value: mcp.local  # Export the name explicitly
+    Export:
+      Name: MCPCloudMapNamespaceName
