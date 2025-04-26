@@ -100,7 +100,7 @@ Resources:
         - Name: my-container
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/mcp-salesforce-server:latest"
           PortMappings:
-            - ContainerPort: 80
+            - ContainerPort: 8000
           Secrets:
             - Name: SALESFORCE_DOMAIN
               ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${SalesforceSecretName}:SALESFORCE_DOMAIN::"
@@ -113,12 +113,22 @@ Resources:
               Value: !Ref SalesforceDDBTableName
             - Name: SF_API_VERSION
               Value: v60.0
+            - Name: FASTMCP_PORT
+              Value: 8000
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref LogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
+          HealthCheck: 
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost:8000/sse || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 10
 
   # ECS Service
   ECSService:

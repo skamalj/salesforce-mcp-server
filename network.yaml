@@ -91,8 +91,8 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: 8000
+          ToPort: 8000
           CidrIp: 0.0.0.0/0
 
   # Cloud Map Namespace for Service Discovery
