@@ -132,7 +132,7 @@ Resources:
       TaskDefinition: !Ref ECSTaskDefinition
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
+          AssignPublicIp: ENABLED
           Subnets:
             - !ImportValue MCPSubnetPublicA
             - !ImportValue MCPSubnetPublicB
