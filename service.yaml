@@ -115,6 +115,8 @@ Resources:
               Value: v60.0
             - Name: FASTMCP_PORT
               Value: 8000
+            - Name: FASTMCP_DEBUG
+              Value: true
           LogConfiguration:
             LogDriver: awslogs
             Options:
