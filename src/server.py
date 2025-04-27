@@ -270,6 +270,20 @@ def send_email_via_ses(email_json: str):
         return f"Error sending email: {str(e)}"
 
 
+@mcp.tool()
+def get_weather(location: str):
+    """Call to get the current weather."""
+    if location.lower() in ["sf", "san francisco"]:
+        return "It's 60 degrees and foggy."
+    else:
+        return "It's 90 degrees and sunny."
+
+
+@mcp.tool()
+def get_coolest_cities():
+    """Get a list of coolest cities"""
+    return "nyc, sf"
+
 if __name__ == "__main__":
     print("Starting server...")
     mcp.run(transport="sse")

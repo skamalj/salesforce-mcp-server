@@ -154,42 +154,6 @@ Resources:
       SecurityGroupIds:
         - !ImportValue MCPSecurityGroupId
 
-  # HTTP API (API Gateway v2)
-  HttpApi:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: mcp-salesforce-api
-      ProtocolType: HTTP
-
-  # API Integration to ECS Service Discovery
-  HttpApiIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref HttpApi
-      IntegrationType: HTTP_PROXY
-      ConnectionType: VPC_LINK
-      ConnectionId: !Ref VpcLink
-      IntegrationMethod: ANY
-      IntegrationUri: !GetAtt CloudMapService.Arn
-      PayloadFormatVersion: "1.0"
-
-  # API Route
-  HttpApiRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: "ANY /{proxy+}"
-      Target: !Sub "integrations/${HttpApiIntegration}"
-  
-    # API Stage
-  HttpApiStage:
-    Type: AWS::ApiGatewayV2::Stage
-    Properties:
-      ApiId: !Ref HttpApi
-      StageName: prod
-      AutoDeploy: true
-
-
 
 Outputs:
 
