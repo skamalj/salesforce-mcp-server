@@ -13,7 +13,7 @@ redirect_uri = os.environ.get("SALESFORCE_REDIRECT_URI")
 table_name = os.getenv("SF_DDB_TABLE")
 api_version = os.getenv("SF_API_VERSION", "v60.0")
 
-mcp = FastMCP("Echo")
+mcp = FastMCP("Salesforce", stateless_http=True)
 
 @mcp.resource("salesforce://domain")
 def get_salesforce_domain() -> str:
@@ -286,5 +286,5 @@ def get_coolest_cities():
 
 if __name__ == "__main__":
     print("Starting server...")
-    mcp.run(transport="sse")
+    mcp.run(transport="streamable-http")
     print("Server is running...")

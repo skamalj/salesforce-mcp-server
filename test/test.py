@@ -2,7 +2,7 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 
 async def main():
-    endpoint = "http://65.0.129.18:8000/sse"  # replace this with your actual endpoint
+    endpoint = "http://13.201.22.227:8000/sse"  # replace this with your actual endpoint
 
     async with sse_client(endpoint) as streams:
         async with ClientSession(*streams) as session:  # removed the *
