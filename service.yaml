@@ -41,8 +41,6 @@ Resources:
         DnsRecords:
           - TTL: 60
             Type: A
-      HealthCheckCustomConfig:
-        FailureThreshold: 1
 
   # ECS Task Role (Permissions to access Secrets Manager and DynamoDB)
   ECSServiceTaskExecutionRole:
