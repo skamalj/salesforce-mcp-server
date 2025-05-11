@@ -115,6 +115,8 @@ Resources:
               Value: 8000
             - Name: FASTMCP_DEBUG
               Value: true
+            - Name: FASTMCP_HOST
+              Value: 0.0.0.0
           LogConfiguration:
             LogDriver: awslogs
             Options:
