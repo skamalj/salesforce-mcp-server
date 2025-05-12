@@ -13,7 +13,7 @@ redirect_uri = os.environ.get("SALESFORCE_REDIRECT_URI")
 table_name = os.getenv("SF_DDB_TABLE")
 api_version = os.getenv("SF_API_VERSION", "v60.0")
 
-mcp = FastMCP("Salesforce", stateless_http=False)
+mcp = FastMCP("Salesforce", stateless_http=True)
 
 @mcp.resource("salesforce://domain")
 def get_salesforce_domain() -> str:
