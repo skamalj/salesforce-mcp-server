@@ -10,7 +10,7 @@ Parameters:
 
   SalesforceDDBTableName:
     Type: String
-    Default: "UserProfiles"
+    Default: "salesforce_tokens"
     Description: DynamoDB table name for Salesforce data
   
   CloudMapNamespaceName:
