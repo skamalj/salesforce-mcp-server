@@ -6,5 +6,5 @@ s3_prefix = "mcp-salesforce-ecs"
 region = "ap-south-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_NAMED_IAM"
-parameter_overrides = "SalesforceSecretName=\"salesforce_credentials-i20QTf\" SalesforceDDBTableName=\"UserProfiles\" CloudMapNamespaceName=\"mcp.local\""
+parameter_overrides = "SalesforceSecretName=\"salesforce_credentials-i20QTf\" SalesforceDDBTableName=\"salesforce_tokens\" CloudMapNamespaceName=\"mcp.local\""
 image_repositories = []
