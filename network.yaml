@@ -148,6 +148,17 @@ Resources:
       Name: mcp.local
       Vpc: !Ref VPC
       Description: Service discovery namespace for ECS services
+  
+  # Cloud Map Namespace
+  CloudMapPublicNamespace:
+    Type: AWS::ServiceDiscovery::PublicDnsNamespace
+    Properties:
+      Name: mcp.fauxdata.in
+      Properties:
+        DnsProperties:
+          SOA:
+            TTL: 100
+      Description: Service discovery public namespace for ECS services
 
 Outputs:
   VpcId:
@@ -189,3 +200,13 @@ Outputs:
     Value: mcp.local
     Export:
       Name: MCPCloudMapNamespaceName
+  
+  CloudMapPublicNamespaceName:
+    Value: mcp.fauxdata.in
+    Export:
+      Name: MCPCloudMapPublicNamespaceName
+  
+  CloudMapPublicNamespaceId:
+    Value: !Ref CloudMapPublicNamespace
+    Export:
+      Name: MCPCloudMapPublicNamespaceId

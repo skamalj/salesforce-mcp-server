@@ -36,7 +36,7 @@ Resources:
     Type: AWS::ServiceDiscovery::Service
     Properties:
       Name: mcp-salesforce-service
-      NamespaceId: !ImportValue MCPCloudMapNamespaceId
+      NamespaceId: !ImportValue MCPCloudMapPublicNamespaceId
       DnsConfig:
         DnsRecords:
           - TTL: 60

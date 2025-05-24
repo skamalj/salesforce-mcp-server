@@ -48,3 +48,7 @@ jobs:
 
       - name: SAM Deploy
         run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --capabilities CAPABILITY_NAMED_IAM
+      
+      - name: Force ECS Service Redeployment
+        run: aws ecs update-service --cluster mcp-ecs-cluster --service mcp-salesforce-ecs-ECSService-7nzRgWn0QhSb --force-new-deployment
+
