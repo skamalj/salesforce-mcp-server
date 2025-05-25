@@ -1,6 +1,7 @@
 # Salesforce Model Context Protocol (MCP) Implementation
 
-This project implements a Model Context Protocol (MCP) server for Salesforce integration using AWS serverless infrastructure. It provides a robust interface for executing Salesforce operations and managing OAuth2 authentication flows.
+This project implements a Model Context Protocol (MCP) server for Salesforce integration using AWS serverless infrastructure. 
+Protocol supported: Streamble HTTP
 
 ## Overview
 
